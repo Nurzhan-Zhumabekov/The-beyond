@@ -110,3 +110,68 @@ Edge Function второго AI владеет переходами статус
 
 После загрузки он создаёт строки `assets` с `storage_path`, `asset_type`, `format`,
 размерами, версией и опциональным `parent_asset_id`.
+
+## Edge Function `generate-image`
+
+Функция запускает официальный `black-forest-labs/flux-schnell` через Replicate
+только после успешного `generate-content`. Ключ `REPLICATE_API_TOKEN` хранится в
+Supabase Secrets и никогда не передаётся во frontend.
+
+```http
+POST /functions/v1/generate-image
+Authorization: Bearer <access_token>
+Content-Type: application/json
+```
+
+```json
+{
+  "generation_id": "1a300000-0000-4000-8000-000000000001",
+  "force": false,
+  "seed": 42
+}
+```
+
+`force` и `seed` необязательны. Без `force` уже существующий фон возвращается
+повторно без платного вызова модели. Для `poster` используется композиция `1:1`,
+для остальных типов — `16:9`. Результат проверяется как PNG, загружается в
+приватный bucket `generated-assets`, записывается в `assets` как `background` и
+возвращается с подписанной ссылкой на один час.
+
+Успешный первый вызов отвечает HTTP `201`, повторное использование — HTTP `200`:
+
+```json
+{
+  "generation_id": "1a300000-0000-4000-8000-000000000001",
+  "prediction_id": "abc123",
+  "asset": {
+    "id": "b1200000-0000-4000-8000-000000000001",
+    "asset_type": "background",
+    "format": "png",
+    "storage_path": "<user>/<project>/generations/<generation>/background-v1-<uuid>.png",
+    "width": 1344,
+    "height": 768,
+    "version": 1,
+    "signed_url": "https://...",
+    "signed_url_expires_in": 3600
+  },
+  "reused": false
+}
+```
+
+Функция использует JWT пользователя для запросов к БД и Storage, поэтому RLS
+проверяет владение generation. Внешние URL ограничены доменами Replicate, размер
+файла — 25 MiB, а при ошибке записи метаданных загруженный orphan-файл удаляется.
+
+Для локального запуска создайте игнорируемый Git файл с новым токеном Replicate и
+передайте его CLI:
+
+```powershell
+supabase functions serve generate-image --env-file supabase/functions/.env.local
+```
+
+Для подключённого облачного проекта секрет и функция публикуются отдельно:
+
+```powershell
+supabase secrets set REPLICATE_API_TOKEN=<new_replicate_token>
+supabase functions deploy generate-image
+```
