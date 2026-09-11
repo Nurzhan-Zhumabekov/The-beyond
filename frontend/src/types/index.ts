@@ -36,6 +36,7 @@ export interface GenerationRequest {
 export interface GenerationResult {
   id: string;
   project_id: string;
+  output_type: OutputType;
   status: "draft" | "approved" | "failed";
   title: string;
   key_points: string[];
