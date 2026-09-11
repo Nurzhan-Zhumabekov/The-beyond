@@ -17,15 +17,22 @@ export default function BrandbookPage() {
 
   const patch = <K extends keyof Brandbook>(key: K, value: Brandbook[K]) => setBrandbook((current) => current ? { ...current, [key]: value } : current);
 
-  function logoChanged(key: "light_logo_url" | "dark_logo_url", event: ChangeEvent<HTMLInputElement>) {
+  async function logoChanged(key: "light_logo_url" | "dark_logo_url", event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    const form = new FormData();
+    form.set("file", file);
+    form.set("variant", key === "light_logo_url" ? "light" : "dark");
+    const response = await fetch(`/api/projects/${projectId}/brandbook/logo`, { method: "POST", body: form, credentials: "include" });
+    if (!response.ok) return;
+    const { path } = await response.json() as { path: string };
     patch(key, URL.createObjectURL(file));
+    patch(key === "light_logo_url" ? "light_logo_path" : "dark_logo_path", path);
   }
 
   async function submit() {
     setSaved(false);
-    await save(brandbook);
+    await save(brandbook!);
     setSaved(true);
   }
 

@@ -1,0 +1,23 @@
+# Local configuration and secrets (never commit these files)
+.env
+.env.*
+
+# Local dependency and test artifacts
+node_modules/
+.pnpm-store/
+.pytest_cache/
+backend/.venv/
+.next/
+*.tsbuildinfo
+
+# Supabase CLI local artifacts
+supabase/.temp/
+supabase/.branches/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

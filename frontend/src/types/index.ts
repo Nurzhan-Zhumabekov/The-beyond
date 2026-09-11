@@ -1,5 +1,5 @@
 export type GenerationStatus = "idle" | "loading" | "success" | "error";
-export type OutputType = "background" | "poster" | "banner" | "package";
+export type OutputType = "background" | "poster" | "banner" | "media_pack";
 export type AssetFormat = "1:1" | "16:9";
 
 export interface Project {
@@ -14,6 +14,8 @@ export interface Brandbook {
   brand_name: string;
   light_logo_url?: string;
   dark_logo_url?: string;
+  light_logo_path?: string;
+  dark_logo_path?: string;
   primary_color: string;
   text_color: string;
   overlay_color: string;
@@ -29,7 +31,7 @@ export interface GenerationRequest {
   output_type: OutputType;
   language: string;
   image_style: string;
-  additional_request?: string;
+  additional_instructions?: string;
   campaign_name?: string;
 }
 
@@ -77,6 +79,8 @@ export interface HistoryItem {
 }
 
 export interface AuthResponse {
-  access_token: string;
+  ok?: boolean;
+  access_token?: string;
   token_type?: string;
+  confirmationRequired?: boolean;
 }

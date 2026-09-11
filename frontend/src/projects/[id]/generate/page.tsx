@@ -12,7 +12,7 @@ const outputs: { id: OutputType; title: string; description: string }[] = [
   { id: "background", title: "Background Art", description: "Clean AI-generated background" },
   { id: "poster", title: "Poster 1:1", description: "Square branded visual" },
   { id: "banner", title: "Banner 16:9", description: "Horizontal branded banner" },
-  { id: "package", title: "Full Media Package", description: "Copy, background, poster and banner" }
+  { id: "media_pack", title: "Full Media Package", description: "Copy, background, poster and banner" }
 ];
 
 export default function GeneratePage() {
@@ -21,8 +21,8 @@ export default function GeneratePage() {
   const { status, result, error, generate, reset } = useGeneration();
   const [sourceType, setSourceType] = useState<"text" | "url">("text");
   const [source, setSource] = useState("");
-  const [outputType, setOutputType] = useState<OutputType>("package");
-  const [language, setLanguage] = useState("English");
+  const [outputType, setOutputType] = useState<OutputType>("media_pack");
+  const [language, setLanguage] = useState("en");
   const [imageStyle, setImageStyle] = useState("Modern editorial");
   const [campaignName, setCampaignName] = useState("");
   const [additionalRequest, setAdditionalRequest] = useState("");
@@ -42,7 +42,7 @@ export default function GeneratePage() {
     setActiveStep(0);
     const timer = window.setInterval(() => setActiveStep((value) => Math.min(value + 1, steps.length - 1)), 320);
     try {
-      await generate({ project_id: projectId, source_type: sourceType, source, output_type: outputType, language, image_style: imageStyle, additional_request: additionalRequest, campaign_name: campaignName });
+      await generate({ project_id: projectId, source_type: sourceType, source: source.trim(), output_type: outputType, language, image_style: imageStyle, additional_instructions: additionalRequest.trim(), campaign_name: campaignName.trim() || undefined });
     } finally {
       window.clearInterval(timer);
       setActiveStep(steps.length - 1);
@@ -56,9 +56,9 @@ export default function GeneratePage() {
     window.setTimeout(() => setCopied(false), 1200);
   }
 
-  const showBackground = outputType === "background" || outputType === "package";
-  const showPoster = outputType === "poster" || outputType === "package";
-  const showBanner = outputType === "banner" || outputType === "package";
+  const showBackground = outputType === "background" || outputType === "media_pack";
+  const showPoster = outputType === "poster" || outputType === "media_pack";
+  const showBanner = outputType === "banner" || outputType === "media_pack";
 
   return (
     <main className="resultPage">
@@ -77,7 +77,7 @@ export default function GeneratePage() {
       </section>
 
       <section className="card brandGrid">
-        <label>Content language<select value={language} onChange={(e) => setLanguage(e.target.value)}><option>English</option><option>Русский</option><option>Қазақша</option></select></label>
+        <label>Content language<select value={language} onChange={(e) => setLanguage(e.target.value)}><option value="en">English</option><option value="ru">Русский</option><option value="kk">Қазақша</option><option value="auto">Detect automatically</option></select></label>
         <label>Image style<select value={imageStyle} onChange={(e) => setImageStyle(e.target.value)}><option>Modern editorial</option><option>Minimal</option><option>Bold</option><option>Corporate</option></select></label>
         <label>Campaign name<input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} placeholder="September launch" /></label>
         <label>Additional request<input value={additionalRequest} onChange={(e) => setAdditionalRequest(e.target.value)} placeholder="Darker, cleaner, more minimal" /></label>
@@ -92,7 +92,8 @@ export default function GeneratePage() {
         <section className="metricsGrid"><div className="metricCard"><span>Cost</span><strong>${result.cost.toFixed(2)}</strong></div><div className="metricCard"><span>API calls</span><strong>{result.api_calls}</strong></div><div className="metricCard"><span>Status</span><strong>{result.status}</strong></div></section>
         <section className="card"><p className="eyebrow">RESULT</p><h2>{result.title}</h2><ul className="keyPointList">{result.key_points.map((point) => <li key={point}>{point}</li>)}</ul></section>
         <section className="card"><div className="tabs">{(["telegram", "instagram", "linkedin"] as const).map((tab) => <button key={tab} className={copyTab === tab ? "tab selected" : "tab"} onClick={() => setCopyTab(tab)}>{tab[0].toUpperCase() + tab.slice(1)}</button>)}</div><textarea className="resultText" value={activeCopy} readOnly /><div className="visualActions"><button className="secondary" onClick={copyText}>{copied ? "Copied ✓" : "Copy"}</button></div></section>
-        <section className="card"><div className="sectionTitle"><span>03</span><div><h2>Visual assets</h2><p>Only the requested asset types are shown.</p></div></div>{showBackground && <div className="visualPreview background"><div className="previewGlow"/><div className="artLabel">BACKGROUND ART</div></div>}{showPoster && <div className="visualPreview poster" style={{ marginTop: 14 }}><div className="previewGlow"/><div className="previewLogo">BEYOND</div><div className="previewHeadline">{result.title.toUpperCase()}</div></div>}{showBanner && <div className="visualPreview banner" style={{ marginTop: 14 }}><div className="previewGlow"/><div className="previewLogo">BEYOND</div><div className="previewHeadline">{result.title.toUpperCase()}</div></div>}<div className="visualActions wrapActions"><button className="secondary">Download</button><button className="secondary" onClick={reset}>Generate another</button></div></section>
+        <section className="card"><div className="sectionTitle"><span>03</span><div><h2>Visual assets</h2><p>Generated once, then rendered with your brandbook.</p></div></div>{showBackground && (result.background_url ? <a href={result.background_url} download className="visualPreview background"><img src={result.background_url} alt="Generated background" /></a> : <div className="visualPreview background"><div className="previewGlow"/><div className="artLabel">BACKGROUND ART</div></div>)}{showPoster && (result.poster_square_url ? <a href={result.poster_square_url} download className="visualPreview poster" style={{ marginTop: 14 }}><img src={result.poster_square_url} alt="Branded square poster" /></a> : <div className="visualPreview poster" style={{ marginTop: 14 }}><div className="previewGlow"/><div className="previewLogo">BEYOND</div><div className="previewHeadline">{result.title.toUpperCase()}</div></div>)}{showBanner && (result.banner_wide_url ? <a href={result.banner_wide_url} download className="visualPreview banner" style={{ marginTop: 14 }}><img src={result.banner_wide_url} alt="Branded wide banner" /></a> : <div className="visualPreview banner" style={{ marginTop: 14 }}><div className="previewGlow"/><div className="previewLogo">BEYOND</div><div className="previewHeadline">{result.title.toUpperCase()}</div></div>)}<div className="visualActions wrapActions"><button className="secondary" onClick={reset}>Generate another</button></div></section>
+        <div className="visualActions"><a href={`/api/generations/${result.id}/export`} className="secondary">Download media pack (ZIP)</a></div>
       </>}
     </main>
   );

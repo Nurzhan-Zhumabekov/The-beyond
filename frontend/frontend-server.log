@@ -1,0 +1,10 @@
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.18.144.1:3000
+✓ Ready in 1012ms
+✓ Running next.config.ts took 77ms
+
+ GET / 200 in 930ms (next.js: 321ms, application-code: 609ms)
+ GET /projects/project-1789126877660/generate 200 in 974ms (next.js: 360ms, proxy.ts: 470ms, application-code: 143ms)
+ GET / 200 in 45ms (next.js: 5ms, application-code: 40ms)
+ GET /dashboard 200 in 66ms (next.js: 7ms, proxy.ts: 9ms, application-code: 50ms)

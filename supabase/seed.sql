@@ -1,0 +1,2 @@
+-- Intentionally empty.
+-- Create demo users through Supabase Auth; never commit passwords or access tokens.
