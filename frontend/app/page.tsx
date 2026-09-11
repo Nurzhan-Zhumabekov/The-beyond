@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 const formats = [
@@ -10,8 +12,15 @@ const formats = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [sourceType, setSourceType] = useState<"text" | "url">("text");
   const [format, setFormat] = useState("package");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    window.setTimeout(() => router.push("/result"), 1200);
+  };
 
   return (
     <main className="shell">
@@ -21,10 +30,10 @@ export default function Home() {
           <p className="muted">AI Content Factory</p>
         </div>
         <nav>
-          <button className="nav active">Create</button>
-          <button className="nav">Projects</button>
-          <button className="nav">History</button>
-          <button className="nav">Brandbook</button>
+          <Link className="nav active" href="/">Create</Link>
+          <Link className="nav" href="/projects">Projects</Link>
+          <Link className="nav" href="/history">History</Link>
+          <Link className="nav" href="/brandbook">Brandbook</Link>
         </nav>
         <div className="user">Demo workspace</div>
       </aside>
@@ -43,9 +52,9 @@ export default function Home() {
             <button className={sourceType === "url" ? "tab selected" : "tab"} onClick={() => setSourceType("url")}>URL</button>
           </div>
           {sourceType === "text" ? (
-            <textarea placeholder="Paste your article, announcement or source text here..." />
+            <textarea defaultValue="AI is changing how modern teams create, adapt and distribute content across multiple platforms." />
           ) : (
-            <input className="urlInput" placeholder="https://example.com/article" />
+            <input className="urlInput" defaultValue="https://example.com/article" />
           )}
         </section>
 
@@ -73,7 +82,9 @@ export default function Home() {
 
         <div className="actions">
           <span>Nothing is published automatically. You review every result first.</span>
-          <button className="generate">Generate →</button>
+          <button className="generate" disabled={isGenerating} onClick={handleGenerate}>
+            {isGenerating ? "Generating…" : "Generate →"}
+          </button>
         </div>
       </section>
     </main>
