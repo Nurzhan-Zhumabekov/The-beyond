@@ -26,3 +26,16 @@ export function jsonResponse(body: unknown, status: number): Response {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+/**
+ * Standard error envelope for this API: `{ "error": { "code", "message" } }`.
+ * `code` is a stable, machine-readable identifier (e.g. "VALIDATION_ERROR");
+ * `message` is human-readable and safe to show to a client.
+ */
+export function errorResponse(
+  code: string,
+  message: string,
+  status: number,
+): Response {
+  return jsonResponse({ error: { code, message } }, status);
+}

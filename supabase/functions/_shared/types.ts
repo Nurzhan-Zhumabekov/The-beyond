@@ -8,7 +8,11 @@
 export type SourceType = "text" | "url";
 export type OutputType = "background" | "poster" | "banner" | "media_pack";
 export type Language = "ru" | "kk" | "en" | "auto";
-export type GenerationStatus = "pending" | "processing" | "completed" | "failed";
+export type GenerationStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed";
 
 export const SOURCE_TYPES: readonly SourceType[] = ["text", "url"];
 export const OUTPUT_TYPES: readonly OutputType[] = [
@@ -43,6 +47,12 @@ export interface UsageInfo {
   estimated_cost: number;
 }
 
+/** Machine-readable + human-readable error pair, matching the API's `{ error: { code, message } }` contract. */
+export interface ApiError {
+  code: string;
+  message: string;
+}
+
 export interface GenerationResponseBody {
   generation_id: string;
   status: GenerationStatus;
@@ -51,7 +61,7 @@ export interface GenerationResponseBody {
   social_posts?: SocialPosts;
   image_prompt?: string;
   usage: UsageInfo;
-  error?: string;
+  error?: ApiError;
 }
 
 /** The strict JSON shape the LLM must return. */
@@ -84,14 +94,18 @@ export function parseGenerationRequest(body: unknown): GenerationRequestBody {
   const record = body as Record<string, unknown>;
 
   if (!isNonEmptyString(record.project_id)) {
-    throw new ValidationError("project_id is required and must be a non-empty string");
+    throw new ValidationError(
+      "project_id is required and must be a non-empty string",
+    );
   }
 
   if (
     typeof record.source_type !== "string" ||
     !SOURCE_TYPES.includes(record.source_type as SourceType)
   ) {
-    throw new ValidationError(`source_type must be one of: ${SOURCE_TYPES.join(", ")}`);
+    throw new ValidationError(
+      `source_type must be one of: ${SOURCE_TYPES.join(", ")}`,
+    );
   }
 
   if (!isNonEmptyString(record.source)) {
@@ -104,7 +118,9 @@ export function parseGenerationRequest(body: unknown): GenerationRequestBody {
       typeof record.language !== "string" ||
       !LANGUAGES.includes(record.language as Language)
     ) {
-      throw new ValidationError(`language must be one of: ${LANGUAGES.join(", ")}`);
+      throw new ValidationError(
+        `language must be one of: ${LANGUAGES.join(", ")}`,
+      );
     }
     language = record.language as Language;
   }
@@ -115,7 +131,9 @@ export function parseGenerationRequest(body: unknown): GenerationRequestBody {
       typeof record.output_type !== "string" ||
       !OUTPUT_TYPES.includes(record.output_type as OutputType)
     ) {
-      throw new ValidationError(`output_type must be one of: ${OUTPUT_TYPES.join(", ")}`);
+      throw new ValidationError(
+        `output_type must be one of: ${OUTPUT_TYPES.join(", ")}`,
+      );
     }
     outputType = record.output_type as OutputType;
   }

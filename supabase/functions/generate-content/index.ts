@@ -9,30 +9,87 @@
  * Postgres through a Supabase client scoped to the caller's own JWT,
  * so row-level security enforces per-user access — it never uses the
  * service role key.
+ *
+ * Error contract: every error response (both top-level HTTP errors and
+ * a failed generation's `error` field) uses
+ * `{ "error": { "code": "...", "message": "..." } }`, and a failure
+ * that happens after the generation record is created is returned with
+ * a non-200 HTTP status matching its category (422 for a bad/unsafe
+ * source URL, 502 for an upstream LLM failure, 500 for an internal
+ * error) rather than always answering 200.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { handleOptions, jsonResponse } from "../_shared/cors.ts";
+import { createClient } from "@supabase/supabase-js";
+import { errorResponse, handleOptions, jsonResponse } from "../_shared/cors.ts";
 import {
-  parseGenerationRequest,
-  ValidationError,
   type GenerationRequestBody,
   type GenerationResponseBody,
+  parseGenerationRequest,
   type SocialPosts,
   type UsageInfo,
+  ValidationError,
 } from "../_shared/types.ts";
 import { prepareTextForLLM } from "../_shared/content.ts";
-import { extractTextFromUrl, ExtractionError } from "../_shared/url-extractor.ts";
+import {
+  ExtractionError,
+  extractTextFromUrl,
+} from "../_shared/url-extractor.ts";
 import { buildGenerationPrompt } from "../_shared/prompt-builder.ts";
 import { generateJson, LLMError } from "../_shared/llm-client.ts";
 import { LLMResponseParseError } from "../_shared/json-parser.ts";
 import { calculateEstimatedCost } from "../_shared/cost-calculator.ts";
 
-function safeErrorMessage(err: unknown): string {
-  if (err instanceof ExtractionError || err instanceof LLMError || err instanceof LLMResponseParseError) {
-    return err.message;
+/** Raised when persisting the completed generation to Postgres fails. */
+class PersistError extends Error {}
+
+interface ClassifiedError {
+  code: string;
+  status: number;
+  /** Safe to send back to the client. */
+  clientMessage: string;
+  /** Stored in generations.error_message; may be more detailed. */
+  dbMessage: string;
+}
+
+function classifyPipelineError(err: unknown): ClassifiedError {
+  if (err instanceof ExtractionError) {
+    return {
+      code: "EXTRACTION_FAILED",
+      status: 422,
+      clientMessage: err.message,
+      dbMessage: err.message,
+    };
   }
-  return "An unexpected error occurred while generating content.";
+  if (err instanceof LLMResponseParseError) {
+    return {
+      code: "LLM_RESPONSE_INVALID",
+      status: 502,
+      clientMessage: err.message,
+      dbMessage: err.message,
+    };
+  }
+  if (err instanceof LLMError) {
+    return {
+      code: "LLM_FAILED",
+      status: 502,
+      clientMessage: err.message,
+      dbMessage: err.message,
+    };
+  }
+  if (err instanceof PersistError) {
+    return {
+      code: "PERSIST_FAILED",
+      status: 500,
+      clientMessage: "Failed to save the generated content.",
+      dbMessage: err.message,
+    };
+  }
+  return {
+    code: "INTERNAL_ERROR",
+    status: 500,
+    clientMessage: "An unexpected error occurred while generating content.",
+    dbMessage: err instanceof Error ? err.message : String(err),
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -40,22 +97,34 @@ Deno.serve(async (req: Request) => {
   if (preflight) return preflight;
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405);
+    return errorResponse("METHOD_NOT_ALLOWED", "Method not allowed", 405);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
-    return jsonResponse({ error: "Missing or invalid Authorization header" }, 401);
+    return errorResponse(
+      "UNAUTHORIZED",
+      "Missing or invalid Authorization header",
+      401,
+    );
   }
   const jwt = authHeader.slice(7).trim();
   if (!jwt) {
-    return jsonResponse({ error: "Missing or invalid Authorization header" }, 401);
+    return errorResponse(
+      "UNAUTHORIZED",
+      "Missing or invalid Authorization header",
+      401,
+    );
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !supabaseAnonKey) {
-    return jsonResponse({ error: "Server misconfiguration: Supabase env vars missing" }, 500);
+    return errorResponse(
+      "SERVER_MISCONFIGURED",
+      "Server misconfiguration: Supabase env vars missing",
+      500,
+    );
   }
 
   // Client scoped to the caller's own JWT so every query is RLS-checked
@@ -67,14 +136,18 @@ Deno.serve(async (req: Request) => {
 
   const { data: userData, error: userError } = await supabase.auth.getUser(jwt);
   if (userError || !userData?.user) {
-    return jsonResponse({ error: "Invalid or expired token" }, 401);
+    return errorResponse("INVALID_TOKEN", "Invalid or expired token", 401);
   }
 
   let rawBody: unknown;
   try {
     rawBody = await req.json();
   } catch {
-    return jsonResponse({ error: "Request body must be valid JSON" }, 400);
+    return errorResponse(
+      "INVALID_JSON",
+      "Request body must be valid JSON",
+      400,
+    );
   }
 
   let request: GenerationRequestBody;
@@ -82,7 +155,7 @@ Deno.serve(async (req: Request) => {
     request = parseGenerationRequest(rawBody);
   } catch (err) {
     if (err instanceof ValidationError) {
-      return jsonResponse({ error: err.message }, 400);
+      return errorResponse("VALIDATION_ERROR", err.message, 400);
     }
     throw err;
   }
@@ -97,7 +170,11 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   if (projectError || !project) {
-    return jsonResponse({ error: "Project not found or access denied" }, 404);
+    return errorResponse(
+      "PROJECT_NOT_FOUND",
+      "Project not found or access denied",
+      404,
+    );
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -105,36 +182,34 @@ Deno.serve(async (req: Request) => {
     .insert({
       project_id: request.project_id,
       source_type: request.source_type,
-      source_text:
-        request.source_type === "text"
-          ? request.source.trim()
-          : null,
-      source_url:
-        request.source_type === "url"
-          ? request.source.trim()
-          : null,
+      source_text: request.source_type === "text"
+        ? request.source.trim()
+        : null,
+      source_url: request.source_type === "url" ? request.source.trim() : null,
       language: request.language,
       output_type: request.output_type,
       campaign_name: request.campaign_name ?? null,
       image_style: request.image_style ?? null,
-      additional_instructions:
-        request.additional_instructions || null,
+      additional_instructions: request.additional_instructions || null,
       status: "processing",
     })
     .select("id")
     .single();
 
   if (insertError || !inserted) {
-    return jsonResponse({ error: "Failed to create generation record" }, 500);
+    return errorResponse(
+      "GENERATION_CREATE_FAILED",
+      "Failed to create generation record",
+      500,
+    );
   }
 
   const generationId = inserted.id as string;
 
   try {
-    const rawText =
-      request.source_type === "url"
-        ? await extractTextFromUrl(request.source)
-        : request.source;
+    const rawText = request.source_type === "url"
+      ? await extractTextFromUrl(request.source)
+      : request.source;
 
     const preparedText = prepareTextForLLM(rawText);
     const prompt = buildGenerationPrompt(request, preparedText);
@@ -174,7 +249,9 @@ Deno.serve(async (req: Request) => {
       .eq("id", generationId);
 
     if (updateError) {
-      throw new Error(`Failed to persist generation result: ${updateError.message}`);
+      throw new PersistError(
+        `Failed to persist generation result: ${updateError.message}`,
+      );
     }
 
     const response: GenerationResponseBody = {
@@ -189,20 +266,27 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(response, 200);
   } catch (err) {
-    const message = safeErrorMessage(err);
+    const { code, status, clientMessage, dbMessage } = classifyPipelineError(
+      err,
+    );
 
     await supabase
       .from("generations")
-      .update({ status: "failed", error_message: message })
+      .update({ status: "failed", error_message: dbMessage })
       .eq("id", generationId);
 
     const failedResponse: GenerationResponseBody = {
       generation_id: generationId,
       status: "failed",
-      error: message,
-      usage: { llm_calls: 0, input_tokens: 0, output_tokens: 0, estimated_cost: 0 },
+      error: { code, message: clientMessage },
+      usage: {
+        llm_calls: 0,
+        input_tokens: 0,
+        output_tokens: 0,
+        estimated_cost: 0,
+      },
     };
 
-    return jsonResponse(failedResponse, 200);
+    return jsonResponse(failedResponse, status);
   }
 });
