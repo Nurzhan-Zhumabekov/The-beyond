@@ -30,21 +30,26 @@ export default function GeneratePage() {
 
   async function handleGenerate() {
     if (!source.trim()) return;
-    setStatus("loading"); setError(""); setActiveStep(0);
+    setStatus("loading");
+    setError("");
+    setActiveStep(0);
     const timer = window.setInterval(() => setActiveStep((step) => Math.min(step + 1, steps.length - 1)), 330);
+
     try {
       const result = await generateContent({ project_id: params.id, source_type: sourceType, source, output_type: outputType, language, image_style: imageStyle, additional_request: additionalRequest, campaign_name: campaignName });
       window.clearInterval(timer);
       setStatus("success");
-      router.push(`/projects/${params.id}/history?generation=${result.id}`);
+      router.push(`/projects/${params.id}/generations/${result.id}`);
     } catch {
-      window.clearInterval(timer); setStatus("error"); setError("Generation failed. Please try again.");
+      window.clearInterval(timer);
+      setStatus("error");
+      setError("Generation failed. Please try again.");
     }
   }
 
   return (
     <main className="resultPage">
-      <div className="resultTopbar"><Link href="/projects" className="backLink">← Projects</Link><Link href={`/projects/${params.id}/brandbook`} className="secondary">Brandbook</Link></div>
+      <div className="resultTopbar"><Link href="/projects" className="backLink">← Projects</Link><div className="topbarActions"><Link href={`/projects/${params.id}/history`} className="secondary">History</Link><Link href={`/projects/${params.id}/brandbook`} className="secondary">Brandbook</Link></div></div>
       <section className="resultHero"><p className="eyebrow">NEW GENERATION</p><h1>Create content</h1><p className="lead">Choose the source, output format and campaign settings.</p></section>
 
       <section className="card">
