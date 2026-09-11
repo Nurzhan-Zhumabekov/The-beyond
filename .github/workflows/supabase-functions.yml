@@ -1,0 +1,46 @@
+name: Supabase Functions CI
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/supabase-functions.yml"
+  push:
+    branches:
+      - main
+      - feature/ai-edge-functions
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/supabase-functions.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deno:
+    name: Format, lint, check and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check formatting
+        run: deno fmt --check supabase/functions
+
+      - name: Lint
+        run: deno lint --config supabase/functions/deno.json supabase/functions
+
+      - name: Type-check Edge Function
+        run: deno check --config supabase/functions/deno.json supabase/functions/generate-content/index.ts
+
+      - name: Run unit tests
+        run: deno test --config supabase/functions/deno.json --allow-env supabase/functions/_shared

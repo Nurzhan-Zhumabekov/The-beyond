@@ -1,0 +1,21 @@
+# Env files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Supabase CLI local artifacts
+supabase/.temp/
+supabase/.branches/
+
+# Frontend generated artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/next-env.d.ts
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
