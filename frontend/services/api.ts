@@ -43,17 +43,32 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
   });
-  if (!response.ok) throw new Error("API request failed");
+  if (!response.ok) {
+    let message = "API request failed";
+    try {
+      const data = await response.json();
+      message = data.detail || data.message || message;
+    } catch {}
+    throw new Error(message);
+  }
   return response.json();
 }
 
 export async function register(payload: { name: string; email: string; password: string }) {
-  if (USE_MOCKS) { await wait(); return { token: "mock-token", user: { name: payload.name, email: payload.email } }; }
+  if (USE_MOCKS) {
+    await wait();
+    if (payload.email.toLowerCase() === "exists@example.com") throw new Error("An account with this email already exists.");
+    return { token: "mock-token", user: { name: payload.name, email: payload.email } };
+  }
   return request("/api/auth/register", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export async function login(payload: { email: string; password: string }) {
-  if (USE_MOCKS) { await wait(); if (!payload.password) throw new Error("Incorrect password"); return { token: "mock-token" }; }
+  if (USE_MOCKS) {
+    await wait();
+    if (payload.password === "wrongpass") throw new Error("Incorrect email or password.");
+    return { token: "mock-token" };
+  }
   return request("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
 }
 
