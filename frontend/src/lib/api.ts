@@ -25,6 +25,7 @@ const mockBrandbook: Brandbook = {
 const mockGeneration: GenerationResult = {
   id: "gen-001",
   project_id: "demo",
+  output_type: "package",
   status: "draft",
   title: "AI is changing modern content production",
   key_points: ["One source becomes multiple formats", "Brand consistency is preserved", "Human review happens before publication"],
@@ -64,7 +65,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     try {
       const body = await response.json();
       message = body.detail || body.message || message;
-    } catch {}
+    } catch {
+      message = `${message} (${response.status})`;
+    }
     throw new Error(message);
   }
   if (response.status === 204) return undefined as T;
@@ -118,7 +121,10 @@ export async function saveBrandbook(projectId: string, payload: Brandbook): Prom
 }
 
 export async function generateContent(payload: GenerationRequest): Promise<GenerationResult> {
-  if (USE_MOCKS) { await wait(1700); return { ...mockGeneration, project_id: payload.project_id, id: `gen-${Date.now()}` }; }
+  if (USE_MOCKS) {
+    await wait(1700);
+    return { ...mockGeneration, project_id: payload.project_id, output_type: payload.output_type, id: `gen-${Date.now()}` };
+  }
   return request("/api/generate", { method: "POST", body: JSON.stringify(payload) });
 }
 
