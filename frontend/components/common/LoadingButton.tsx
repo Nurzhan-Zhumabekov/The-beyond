@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
+
 type Props = {
   loading: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
   loadingText?: string;
   disabled?: boolean;
   type?: "button" | "submit";
