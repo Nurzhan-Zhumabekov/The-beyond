@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./enhancements.css";
 
 export const metadata: Metadata = {
   title: "Beyond — AI Content Factory",
