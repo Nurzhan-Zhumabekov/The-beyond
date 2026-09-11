@@ -45,7 +45,10 @@ Deno.test("parseLlmJson rejects invalid JSON", () => {
 Deno.test("parseLlmJson rejects a response missing required fields", () => {
   const incomplete = { ...VALID_PAYLOAD } as Record<string, unknown>;
   delete incomplete.image_prompt;
-  assertThrows(() => parseLlmJson(JSON.stringify(incomplete)), LLMResponseParseError);
+  assertThrows(
+    () => parseLlmJson(JSON.stringify(incomplete)),
+    LLMResponseParseError,
+  );
 });
 
 Deno.test("parseLlmJson rejects fewer than 3 key_points", () => {

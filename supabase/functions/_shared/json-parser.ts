@@ -46,7 +46,9 @@ export function parseLlmJson(rawText: string): LLMPayload {
     parsed = JSON.parse(cleaned);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new LLMResponseParseError(`LLM response is not valid JSON: ${message}`);
+    throw new LLMResponseParseError(
+      `LLM response is not valid JSON: ${message}`,
+    );
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -76,7 +78,9 @@ export function parseLlmJson(rawText: string): LLMPayload {
     !Array.isArray(keyPoints) ||
     keyPoints.length < MIN_KEY_POINTS ||
     keyPoints.length > MAX_KEY_POINTS ||
-    !keyPoints.every((point) => typeof point === "string" && point.trim() !== "")
+    !keyPoints.every((point) =>
+      typeof point === "string" && point.trim() !== ""
+    )
   ) {
     throw new LLMResponseParseError(
       `LLM response must contain between ${MIN_KEY_POINTS} and ${MAX_KEY_POINTS} non-empty string key_points`,

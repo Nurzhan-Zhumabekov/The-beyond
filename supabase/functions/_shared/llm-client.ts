@@ -18,7 +18,8 @@ import { parseLlmJson } from "./json-parser.ts";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MODEL = "gpt-4o-mini";
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_CHAT_COMPLETIONS_URL =
+  "https://api.openai.com/v1/chat/completions";
 const MAX_TOTAL_ATTEMPTS = 2; // one retry, i.e. at most two attempts total
 
 export class LLMError extends Error {}
@@ -90,19 +91,25 @@ function buildMockPayload(prompt: string): LLMPayload {
       "Third key takeaway from the material (mock).",
     ],
   };
-  const posts: Record<string, { telegram: string; instagram: string; linkedin: string }> = {
+  const posts: Record<
+    string,
+    { telegram: string; instagram: string; linkedin: string }
+  > = {
     ru: {
-      telegram: `[MOCK] ${titles.ru}\n\nКраткий пересказ материала для Telegram.`,
+      telegram:
+        `[MOCK] ${titles.ru}\n\nКраткий пересказ материала для Telegram.`,
       instagram: `[MOCK] ${titles.ru} ✨ #контент #AI`,
       linkedin: `[MOCK] ${titles.ru} — ключевые выводы для профессионалов.`,
     },
     kk: {
       telegram: `[MOCK] ${titles.kk}\n\nTelegram үшін қысқаша мазмұндама.`,
       instagram: `[MOCK] ${titles.kk} ✨ #контент #AI`,
-      linkedin: `[MOCK] ${titles.kk} — мамандарға арналған негізгі қорытындылар.`,
+      linkedin:
+        `[MOCK] ${titles.kk} — мамандарға арналған негізгі қорытындылар.`,
     },
     en: {
-      telegram: `[MOCK] ${titles.en}\n\nShort summary of the material for Telegram.`,
+      telegram:
+        `[MOCK] ${titles.en}\n\nShort summary of the material for Telegram.`,
       instagram: `[MOCK] ${titles.en} ✨ #content #AI`,
       linkedin: `[MOCK] ${titles.en} — key takeaways for professionals.`,
     },
@@ -161,14 +168,18 @@ async function requestOpenAi(
       throw new TransientLLMError("Timed out while calling the LLM");
     }
     const message = err instanceof Error ? err.message : String(err);
-    throw new TransientLLMError(`Network error while calling the LLM: ${message}`);
+    throw new TransientLLMError(
+      `Network error while calling the LLM: ${message}`,
+    );
   } finally {
     clearTimeout(timeoutId);
   }
 
   if (!response.ok) {
     if (response.status >= 500) {
-      throw new TransientLLMError(`LLM API returned a server error (${response.status})`);
+      throw new TransientLLMError(
+        `LLM API returned a server error (${response.status})`,
+      );
     }
     throw new LLMError(`LLM API returned an error (${response.status})`);
   }
@@ -176,7 +187,9 @@ async function requestOpenAi(
   const data = await response.json();
   const messageContent = data?.choices?.[0]?.message?.content;
   if (typeof messageContent !== "string") {
-    throw new LLMError("Unexpected LLM response format: missing message content");
+    throw new LLMError(
+      "Unexpected LLM response format: missing message content",
+    );
   }
 
   const parsed = parseLlmJson(messageContent);
@@ -184,11 +197,12 @@ async function requestOpenAi(
 
   return {
     content: parsed,
-    inputTokens: typeof usage.prompt_tokens === "number" ? usage.prompt_tokens : estimateTokens(prompt),
-    outputTokens:
-      typeof usage.completion_tokens === "number"
-        ? usage.completion_tokens
-        : estimateTokens(messageContent),
+    inputTokens: typeof usage.prompt_tokens === "number"
+      ? usage.prompt_tokens
+      : estimateTokens(prompt),
+    outputTokens: typeof usage.completion_tokens === "number"
+      ? usage.completion_tokens
+      : estimateTokens(messageContent),
     model,
   };
 }
@@ -216,7 +230,9 @@ async function callOpenAiWithRetry(
     }
   }
   // Unreachable, but keeps TypeScript happy.
-  throw lastError instanceof Error ? lastError : new LLMError(String(lastError));
+  throw lastError instanceof Error
+    ? lastError
+    : new LLMError(String(lastError));
 }
 
 /**

@@ -26,8 +26,7 @@ import { Client } from "postgres";
 import type { GenerationRequestBody } from "./types.ts";
 
 const RUN_INTEGRATION = Deno.env.get("RUN_DB_INTEGRATION_TESTS") === "true";
-const DB_URL =
-  Deno.env.get("SUPABASE_DB_URL") ??
+const DB_URL = Deno.env.get("SUPABASE_DB_URL") ??
   "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 /**
@@ -73,14 +72,19 @@ async function withTestProject(
   try {
     await fn(projectId);
   } finally {
-    await client.queryArray("delete from public.projects where id = $1", [projectId]);
-    await client.queryArray("delete from public.profiles where id = $1", [userId]);
+    await client.queryArray("delete from public.projects where id = $1", [
+      projectId,
+    ]);
+    await client.queryArray("delete from public.profiles where id = $1", [
+      userId,
+    ]);
     await client.queryArray("delete from auth.users where id = $1", [userId]);
   }
 }
 
 Deno.test({
-  name: "INSERT with source_type=text succeeds and stores source_text with source_url null",
+  name:
+    "INSERT with source_type=text succeeds and stores source_text with source_url null",
   ignore: !RUN_INTEGRATION,
   async fn() {
     const client = new Client(DB_URL);
@@ -138,7 +142,8 @@ Deno.test({
 });
 
 Deno.test({
-  name: "INSERT with source_type=url succeeds and stores source_url with source_text null",
+  name:
+    "INSERT with source_type=url succeeds and stores source_url with source_text null",
   ignore: !RUN_INTEGRATION,
   async fn() {
     const client = new Client(DB_URL);
@@ -185,7 +190,8 @@ Deno.test({
 });
 
 Deno.test({
-  name: "the database rejects a row that violates generations_source_matches_type",
+  name:
+    "the database rejects a row that violates generations_source_matches_type",
   ignore: !RUN_INTEGRATION,
   async fn() {
     const client = new Client(DB_URL);
@@ -203,9 +209,16 @@ Deno.test({
           );
         } catch (err) {
           threw = true;
-          assert(String(err).toLowerCase().includes("generations_source_matches_type"));
+          assert(
+            String(err).toLowerCase().includes(
+              "generations_source_matches_type",
+            ),
+          );
         }
-        assert(threw, "expected the CHECK constraint to reject the mismatched row");
+        assert(
+          threw,
+          "expected the CHECK constraint to reject the mismatched row",
+        );
       });
     } finally {
       await client.end();

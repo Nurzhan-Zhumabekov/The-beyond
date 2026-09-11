@@ -2,7 +2,8 @@ import { assert, assertEquals } from "@std/assert";
 import { cleanText, prepareTextForLLM, truncateForPrompt } from "./content.ts";
 
 Deno.test("cleanText collapses whitespace and removes duplicate lines", () => {
-  const input = "Line one.\n\n\n\nLine one.\nLine two.   with   spaces\r\nLine two.   with   spaces";
+  const input =
+    "Line one.\n\n\n\nLine one.\nLine two.   with   spaces\r\nLine two.   with   spaces";
   const result = cleanText(input);
 
   assertEquals(result.split("\n").filter((l) => l.trim() !== "").length, 2);

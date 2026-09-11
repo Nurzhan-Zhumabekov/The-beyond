@@ -8,10 +8,9 @@ export function buildGenerationPrompt(
   request: GenerationRequestBody,
   preparedText: string,
 ): string {
-  const languageHint =
-    !request.language || request.language === "auto"
-      ? "Detect the material's language automatically."
-      : `The material is expected to be in '${request.language}'. Confirm or correct this in detected_language based on the actual text.`;
+  const languageHint = !request.language || request.language === "auto"
+    ? "Detect the material's language automatically."
+    : `The material is expected to be in '${request.language}'. Confirm or correct this in detected_language based on the actual text.`;
 
   const campaignHint = request.campaign_name
     ? `Campaign name (for context only, do not render as image text): ${request.campaign_name}.`

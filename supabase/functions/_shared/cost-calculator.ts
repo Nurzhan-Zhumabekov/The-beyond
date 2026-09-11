@@ -24,7 +24,7 @@ export function calculateEstimatedCost(
   const pricing = PRICING_PER_1K_TOKENS[model];
   if (!pricing) return 0;
 
-  const cost =
-    (inputTokens / 1000) * pricing.input + (outputTokens / 1000) * pricing.output;
+  const cost = (inputTokens / 1000) * pricing.input +
+    (outputTokens / 1000) * pricing.output;
   return Math.round(cost * 1_000_000) / 1_000_000;
 }
