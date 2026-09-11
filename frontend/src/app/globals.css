@@ -13,6 +13,12 @@
   --success: #7ce7b2;
   --danger: #ff909a;
   --shadow: 0 26px 80px rgba(0, 0, 0, 0.35);
+  --ease-out-expo: cubic-bezier(.16, 1, .3, 1);
+  --ease-smooth: cubic-bezier(.22, 1, .36, 1);
+  --ease-gentle: cubic-bezier(.45, 0, .25, 1);
+  --motion-fast: 240ms;
+  --motion-base: 520ms;
+  --motion-slow: 900ms;
 }
 
 * { box-sizing: border-box; }
@@ -752,4 +758,212 @@ textarea:focus, .urlInput:focus, .brandGrid input:focus, .brandGrid select:focus
   .projectCard { grid-template-columns: 1fr; }
   .projectCardVisual { min-height: 235px; }
   .projectCardBody { padding: 28px; }
+}
+
+/* Motion polish */
+.resultPage,
+.editorPage {
+  animation-duration: var(--motion-slow);
+  animation-timing-function: var(--ease-out-expo);
+}
+
+.resultTopbar {
+  animation: soft-drop 720ms var(--ease-out-expo) both;
+  transition:
+    border-color var(--motion-base) var(--ease-smooth),
+    background var(--motion-base) var(--ease-smooth),
+    box-shadow var(--motion-base) var(--ease-smooth);
+}
+
+.resultTopbar:hover {
+  border-color: rgba(255,255,255,.15);
+  background: rgba(11,12,19,.82);
+  box-shadow: 0 18px 55px rgba(0,0,0,.24);
+}
+
+.backLink,
+.format,
+.generate,
+.approve,
+.secondary,
+.creativeAction,
+.projectCard,
+.projectCardVisual > i,
+.actionGlyph,
+.actionArrow {
+  transition-timing-function: var(--ease-smooth);
+}
+
+.backLink { transition-duration: var(--motion-fast); }
+.format { transition-duration: var(--motion-base); }
+.generate, .approve, .secondary { transition-duration: 360ms; }
+.creativeAction, .projectCard { transition-duration: 620ms; }
+.projectCardVisual > i, .actionGlyph, .actionArrow { transition-duration: 720ms; }
+
+.projectHeroCopy > *,
+.workspaceHero > div:first-child > * {
+  opacity: 0;
+  translate: 0 24px;
+  animation: rise-gently 900ms var(--ease-out-expo) forwards;
+}
+
+.projectHeroCopy > :nth-child(1),
+.workspaceHero > div:first-child > :nth-child(1) { animation-delay: 90ms; }
+.projectHeroCopy > :nth-child(2),
+.workspaceHero > div:first-child > :nth-child(2) { animation-delay: 160ms; }
+.projectHeroCopy > :nth-child(3),
+.workspaceHero > div:first-child > :nth-child(3) { animation-delay: 250ms; }
+.projectHeroCopy > :nth-child(4) { animation-delay: 340ms; }
+
+.creativeOrbit {
+  opacity: 0;
+  animation:
+    orbit-reveal 1150ms var(--ease-out-expo) 180ms forwards,
+    orbit-shape 14s var(--ease-gentle) 1.35s infinite;
+}
+
+.creativeOrbit::before { animation-duration: 42s; }
+.orbitHaloOne { animation: halo-breathe 6.5s var(--ease-gentle) infinite; }
+.orbitHaloTwo { animation: halo-breathe 8s var(--ease-gentle) 1.3s infinite reverse; }
+.satelliteOne { animation: satellite-drift 5.8s var(--ease-gentle) .4s infinite; }
+.satelliteTwo { animation: satellite-drift 7s var(--ease-gentle) 1.2s infinite reverse; }
+.satelliteThree { animation: satellite-drift 6.4s var(--ease-gentle) 2s infinite; }
+
+.creativeAction {
+  opacity: 0;
+  translate: 0 30px;
+  animation: rise-gently 950ms var(--ease-out-expo) forwards;
+  backface-visibility: hidden;
+}
+
+.creativeAction:nth-child(1) { animation-delay: 360ms; }
+.creativeAction:nth-child(2) { animation-delay: 440ms; }
+.creativeAction:nth-child(3) { animation-delay: 520ms; }
+
+.creativeAction:hover {
+  transform: translateY(-9px) rotate(-.25deg) scale(1.008);
+}
+
+.creativeAction::after {
+  opacity: .7;
+  transition: opacity 620ms var(--ease-smooth), transform 900ms var(--ease-smooth);
+}
+
+.creativeAction:hover::after {
+  opacity: 1;
+  transform: translateX(2%);
+}
+
+.creativeActionPrimary::before {
+  position: absolute;
+  inset: -80% -40%;
+  z-index: 1;
+  content: "";
+  background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,.32) 50%, transparent 58%);
+  transform: translateX(-40%) rotate(8deg);
+  transition: transform 1.25s var(--ease-out-expo);
+  pointer-events: none;
+}
+
+.creativeActionPrimary:hover::before { transform: translateX(42%) rotate(8deg); }
+
+.projectMarquee {
+  opacity: 0;
+  translate: 0 18px;
+  animation: rise-gently 900ms var(--ease-out-expo) 610ms forwards;
+}
+
+.workspaceCounter {
+  opacity: 0;
+  scale: .94;
+  animation: counter-reveal 950ms var(--ease-out-expo) 310ms forwards;
+}
+
+.workspaceToolbar {
+  opacity: 0;
+  animation: fade-gently 850ms var(--ease-out-expo) 380ms forwards;
+}
+
+.projectCard {
+  opacity: 0;
+  translate: 0 26px;
+  animation: rise-gently 920ms var(--ease-out-expo) forwards;
+}
+
+.projectCard:nth-child(1) { animation-delay: 450ms; }
+.projectCard:nth-child(2) { animation-delay: 540ms; }
+.projectCard:nth-child(3) { animation-delay: 630ms; }
+.projectCard:nth-child(n+4) { animation-delay: 700ms; }
+
+.projectCard:hover { transform: translateY(-6px) scale(1.003); }
+
+.projectPulseRow i,
+.resultStatus::before {
+  animation: signal-pulse 2.8s var(--ease-gentle) infinite;
+}
+
+@keyframes soft-drop {
+  from { opacity: 0; translate: 0 -14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes rise-gently {
+  from { opacity: 0; translate: 0 24px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes fade-gently {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes counter-reveal {
+  from { opacity: 0; scale: .94; filter: blur(8px); }
+  to { opacity: 1; scale: 1; filter: blur(0); }
+}
+
+@keyframes orbit-reveal {
+  from { opacity: 0; clip-path: circle(18% at 50% 50%); filter: blur(10px); }
+  to { opacity: 1; clip-path: circle(75% at 50% 50%); filter: blur(0); }
+}
+
+@keyframes halo-breathe {
+  0%, 100% { opacity: .72; scale: .94; }
+  50% { opacity: 1; scale: 1.08; }
+}
+
+@keyframes satellite-drift {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -8px; }
+}
+
+@keyframes signal-pulse {
+  0%, 100% { opacity: .72; box-shadow: 0 0 8px currentColor; }
+  50% { opacity: 1; box-shadow: 0 0 18px currentColor; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resultPage,
+  .editorPage,
+  .resultTopbar,
+  .projectHeroCopy > *,
+  .workspaceHero > div:first-child > *,
+  .creativeOrbit,
+  .creativeOrbit::before,
+  .orbitHaloOne,
+  .orbitHaloTwo,
+  .orbitSatellite,
+  .creativeAction,
+  .projectMarquee,
+  .workspaceCounter,
+  .workspaceToolbar,
+  .projectCard,
+  .projectPulseRow i,
+  .resultStatus::before {
+    opacity: 1;
+    translate: none;
+    scale: none;
+    animation: none !important;
+    filter: none;
+  }
 }
