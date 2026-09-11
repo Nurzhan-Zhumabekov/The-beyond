@@ -102,7 +102,25 @@ Deno.serve(async (req: Request) => {
 
   const { data: inserted, error: insertError } = await supabase
     .from("generations")
-    .insert({ project_id: request.project_id, status: "processing" })
+    .insert({
+      project_id: request.project_id,
+      source_type: request.source_type,
+      source_text:
+        request.source_type === "text"
+          ? request.source.trim()
+          : null,
+      source_url:
+        request.source_type === "url"
+          ? request.source.trim()
+          : null,
+      language: request.language,
+      output_type: request.output_type,
+      campaign_name: request.campaign_name ?? null,
+      image_style: request.image_style ?? null,
+      additional_instructions:
+        request.additional_instructions || null,
+      status: "processing",
+    })
     .select("id")
     .single();
 
