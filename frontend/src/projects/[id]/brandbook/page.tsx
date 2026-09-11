@@ -24,6 +24,7 @@ export default function BrandbookPage() {
   }
 
   async function submit() {
+    if (!brandbook) return;
     setSaved(false);
     await save(brandbook);
     setSaved(true);
