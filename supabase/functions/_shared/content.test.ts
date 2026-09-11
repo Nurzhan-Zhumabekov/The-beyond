@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "@std/assert";
 import { cleanText, prepareTextForLLM, truncateForPrompt } from "./content.ts";
 
 Deno.test("cleanText collapses whitespace and removes duplicate lines", () => {

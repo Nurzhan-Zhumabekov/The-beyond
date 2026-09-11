@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "@std/assert";
 import { calculateEstimatedCost } from "./cost-calculator.ts";
 
 Deno.test("calculateEstimatedCost returns a positive cost for a known model", () => {

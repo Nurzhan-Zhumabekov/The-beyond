@@ -223,12 +223,12 @@ async function callOpenAiWithRetry(
  * Generates structured content from the given prompt.
  * `fetchImpl` can be overridden in tests to avoid real network/API calls.
  */
-export async function generateJson(
+export function generateJson(
   prompt: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<LLMResult> {
   if (isMockMode()) {
-    return mockGenerate(prompt);
+    return Promise.resolve(mockGenerate(prompt));
   }
   return callOpenAiWithRetry(prompt, fetchImpl);
 }

@@ -21,8 +21,8 @@
  * string when not provided.
  */
 
-import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+import { assert, assertEquals } from "@std/assert";
+import { Client } from "postgres";
 import type { GenerationRequestBody } from "./types.ts";
 
 const RUN_INTEGRATION = Deno.env.get("RUN_DB_INTEGRATION_TESTS") === "true";

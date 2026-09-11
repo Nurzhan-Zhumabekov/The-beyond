@@ -1,4 +1,4 @@
-import { assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert } from "@std/assert";
 import { buildGenerationPrompt } from "./prompt-builder.ts";
 import type { GenerationRequestBody } from "./types.ts";
 
