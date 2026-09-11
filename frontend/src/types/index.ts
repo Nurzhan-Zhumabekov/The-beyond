@@ -36,7 +36,6 @@ export interface GenerationRequest {
 export interface GenerationResult {
   id: string;
   project_id: string;
-  output_type: OutputType;
   status: "draft" | "approved" | "failed";
   title: string;
   key_points: string[];
@@ -75,4 +74,9 @@ export interface HistoryItem {
   preview_url?: string;
   cost: number;
   status: "draft" | "approved" | "failed";
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type?: string;
 }

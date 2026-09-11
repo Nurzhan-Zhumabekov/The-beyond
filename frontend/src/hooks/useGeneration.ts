@@ -1,29 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { generationsService } from "@/services/generations";
-import type { GenerationRequest, GenerationResult } from "@/types";
+import { generateContent } from "@/services/generations";
+import type { GenerationRequest, GenerationResult, GenerationStatus } from "@/types";
 
 export function useGeneration() {
+  const [status, setStatus] = useState<GenerationStatus>("idle");
   const [result, setResult] = useState<GenerationResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   async function generate(payload: GenerationRequest) {
-    setLoading(true);
-    setError(null);
+    setStatus("loading");
+    setError("");
     try {
-      const next = await generationsService.generate(payload);
-      setResult(next);
-      return next;
+      const data = await generateContent(payload);
+      setResult(data);
+      setStatus("success");
+      return data;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Generation failed.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Generation failed");
+      setStatus("error");
       throw err;
-    } finally {
-      setLoading(false);
     }
   }
 
-  return { result, loading, error, generate, setResult };
+  function reset() {
+    setStatus("idle");
+    setResult(null);
+    setError("");
+  }
+
+  return { status, result, error, generate, reset };
 }
