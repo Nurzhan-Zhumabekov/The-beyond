@@ -1,7 +1,8 @@
 import type { AssetUpdatePayload, Brandbook, GenerationRequest, GenerationResult, HistoryItem, Project } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const USE_MOCKS = true;
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== "false";
+const TOKEN_KEY = "beyond_access_token";
 
 const wait = (ms = 450) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -38,23 +39,62 @@ const mockGeneration: GenerationResult = {
   created_at: "2026-09-11T11:30:00+05:00",
 };
 
+function getToken() {
+  return typeof window === "undefined" ? null : window.localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAccessToken(token: string) {
+  if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearAccessToken() {
+  if (typeof window !== "undefined") window.localStorage.removeItem(TOKEN_KEY);
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
-  });
-  if (!response.ok) throw new Error("API request failed");
+  const token = getToken();
+  const headers = new Headers(options?.headers);
+  if (!(options?.body instanceof FormData)) headers.set("Content-Type", "application/json");
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+
+  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  if (response.status === 401) clearAccessToken();
+  if (!response.ok) {
+    let message = "API request failed";
+    try {
+      const body = await response.json();
+      message = body.detail || body.message || message;
+    } catch {}
+    throw new Error(message);
+  }
+  if (response.status === 204) return undefined as T;
   return response.json();
 }
 
 export async function register(payload: { name: string; email: string; password: string }) {
-  if (USE_MOCKS) { await wait(); return { token: "mock-token", user: { name: payload.name, email: payload.email } }; }
-  return request("/api/auth/register", { method: "POST", body: JSON.stringify(payload) });
+  if (USE_MOCKS) {
+    await wait();
+    if (payload.email.toLowerCase() === "exists@example.com") throw new Error("An account with this email already exists.");
+    const result = { access_token: "mock-token", user: { name: payload.name, email: payload.email } };
+    setAccessToken(result.access_token);
+    return result;
+  }
+  const result = await request<{ access_token: string; user?: unknown }>("/api/auth/register", { method: "POST", body: JSON.stringify(payload) });
+  setAccessToken(result.access_token);
+  return result;
 }
 
 export async function login(payload: { email: string; password: string }) {
-  if (USE_MOCKS) { await wait(); if (!payload.password) throw new Error("Incorrect password"); return { token: "mock-token" }; }
-  return request("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
+  if (USE_MOCKS) {
+    await wait();
+    if (payload.password === "wrongpass") throw new Error("Incorrect email or password.");
+    const result = { access_token: "mock-token" };
+    setAccessToken(result.access_token);
+    return result;
+  }
+  const result = await request<{ access_token: string }>("/api/auth/login", { method: "POST", body: JSON.stringify(payload) });
+  setAccessToken(result.access_token);
+  return result;
 }
 
 export async function getProjects(): Promise<Project[]> {
