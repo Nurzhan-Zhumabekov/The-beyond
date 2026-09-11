@@ -1,0 +1,16 @@
+# Env files (never commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Supabase CLI local artifacts
+supabase/.temp/
+supabase/.branches/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
